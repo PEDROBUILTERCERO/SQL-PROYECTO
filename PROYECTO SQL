@@ -1,0 +1,98 @@
+
+#CREAR BASE DE DATOS
+#CREAR LAS 4 TABLAS DE LA BD
+
+CREATE TABLE Alumnos(
+	id SERIAL PRIMARY KEY,
+	nombre_alumno VARCHAR (20),
+	apellido VARCHAR (20)
+);
+
+CREATE TABLE Cursos(
+	id SERIAL PRIMARY KEY,
+	nombre_curso VARCHAR (20),
+	duracion_semanas INTEGER,
+	fecha_inicio DATE
+);
+
+CREATE TABLE Inscripciones(
+	id SERIAL PRIMARY KEY,
+	id_alumno INTEGER REFERENCES Alumnos (id),
+	id_curso INTEGER REFERENCES Cursos (id),
+	fecha DATE
+);
+
+CREATE TABLE Participaciones(
+	id SERIAL PRIMARY KEY,
+	id_alumno INTEGER REFERENCES Alumnos (id),
+	id_curso INTEGER REFERENCES Cursos (id),
+	tipo VARCHAR (20) CHECK (tipo IN('Foro', 'Clase', 'Tareas')),
+	fecha DATE
+);
+
+#POBLAR TABLAS
+
+
+INSERT INTO Alumnos (nombre_alumno, apellido) VALUES
+('Ana', 'Arce'),
+('Belen', 'Bueno');
+
+INSERT INTO Cursos (nombre_curso, duracion_semanas, fecha_inicio) VALUES
+('Python', 12, '2024-01-18'),
+('SQL', 10, '2024-03-15');
+
+INSERT INTO Inscripciones (id_alumno, id_curso, fecha) VALUES
+(1, 1, '2024-02-12' ),
+(2, 1, '2024-02-15');
+
+INSERT INTO Participaciones (id_alumno, id_curso, tipo, fecha) VALUES
+(1, 1, 'Foro', '2024-02-25' ),
+(2, 1, 'Clase', '2024-02-26');
+
+#5_CONSULTAS_CASO_PRACTICO
+
+#CONSULTA1. DATOS DE ANA ARCE
+
+SELECT alumnos.nombre, alumnos.apellido, inscripciones.fecha, participaciones.fecha, participaciones.tipo, cursos.nombre_curso
+FROM alumnos
+INNER JOIN inscripciones ON alumnos.id = inscripciones.id_alumno
+INNER JOIN participaciones ON alumnos.id = participaciones.id_alumno
+INNER JOIN cursos ON cursos.id = participaciones.id_curso
+WHERE alumnos.nombre = 'Ana' AND alumnos.apellido = 'Arce'
+
+#CONSULTA2. ALUMNOS MATRICULADOS EN PYTHON.
+
+SELECT alumnos.nombre_alumno, alumnos.apellido
+FROM alumnos
+INNER JOIN inscripciones ON alumnos.id = inscripciones.id_alumno
+INNER JOIN cursos ON cursos.id = inscripciones.id_curso
+WHERE cursos.nombre_curso = 'Python';
+
+#CONSUTA3. CURSOS Y CANTIDAD DE ALUMNOS MATRICULADOS
+
+SELECT cursos.nombre_curso, COUNT(inscripciones.id_alumno) AS cantidad_alumnos
+FROM cursos
+LEFT JOIN inscripciones ON cursos.id = inscripciones.id_curso
+GROUP BY cursos.nombre_curso;
+
+#CONSULTA4. ALUMNOS Y PARTICIPACION EN FORO.
+
+SELECT alumnos.nombre_alumno, alumnos.apellido
+FROM alumnos
+INNER JOIN participaciones ON alumnos.id = participaciones.id_alumno
+WHERE participaciones.tipo = 'Foro';
+
+#COSULTA5. REVISAR QUÉ CURSOS DURAN X SEMANAS.
+SELECT nombre_curso, duracion_semanas
+FROM cursos
+WHERE duracion_semanas > 10;
+
+#CONSULTA6. ALUMNOS QUE HAYAN PARTICIPADO TANTO EN FORO COMO EN CLASE.
+SELECT alumnos.nombre_alumno, alumnos.apellido
+FROM alumnos
+INNER JOIN participaciones ON alumnos.id = participaciones.id_alumno
+INNER JOIN cursos ON cursos.id = participaciones.id_curso
+WHERE cursos.nombre_curso = 'Python'
+  AND participaciones.tipo IN ('Foro', 'Clase')
+GROUP BY alumnos.nombre_alumno, alumnos.apellido
+HAVING COUNT(DISTINCT participaciones.tipo) = 2;
